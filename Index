@@ -719,8 +719,8 @@ html,body{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://supabase.com/dashboard/project/funkvzxbhpnjgjhvwlbd';
+const SUPABASE_KEY = 'sb_publishable_FHRhZkNdWurGEFZMOZ1GHA_vs5Yh0xz';
 const STAMPS_NEEDED = 8;
 const TIMEOUT = 10000;
 
