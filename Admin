@@ -286,8 +286,8 @@ tr:hover td{background:#f9f7f4}
 // ════════════════════════
 // ⚙️  CONFIG — FILL THESE
 // ════════════════════════
-const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
-const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL  = 'https://supabase.com/dashboard/project/funkvzxbhpnjgjhvwlbd';
+const SUPABASE_KEY  = 'sb_publishable_FHRhZkNdWurGEFZMOZ1GHA_vs5Yh0xz';
 const ADMIN_PASS    = 'Emboss@2026';   // ← CHANGE THIS PASSWORD
 const STAMPS_NEEDED = 8;
 
