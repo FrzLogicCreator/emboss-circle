@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Emboss Circle — Admin Panel</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#104237;--green2:#1a5c4a;
+  --pink:#eda8cb;--cream:#f5eed9;--pearl:#f0efef;
+  --white:#fff;--slate:#5f6b64;--border:#dddad3;
+  --red:#c0392b;--red-lt:#fdecea;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f3f4f6;color:#111;min-height:100vh}
+.screen{display:none;min-height:100vh}
+.screen.active{display:block}
+
+/* ── LOGIN ── */
+#s-login{display:none;align-items:center;justify-content:center;background:var(--green)}
+#s-login.active{display:flex}
+.login-box{background:var(--white);border-radius:20px;padding:40px 36px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo-top{font-size:0.7rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--slate);margin-bottom:12px}
+.login-name{font-size:1.4rem;font-weight:800;color:var(--green)}
+.login-sub{font-size:0.75rem;color:var(--slate);margin-top:3px}
+label{display:block;font-size:0.78rem;font-weight:700;color:var(--green);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+input[type=password],input[type=text],input[type=tel],select{
+  width:100%;padding:13px 14px;border:2px solid var(--border);
+  border-radius:10px;font-size:0.95rem;outline:none;
+  transition:border .2s;background:var(--pearl);color:var(--green);font-weight:600;
+}
+input:focus,select:focus{border-color:var(--pink)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:14px;font-size:0.92rem;font-weight:800;
+  border:none;border-radius:10px;cursor:pointer;transition:all .18s;margin-top:14px}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-green{background:var(--green);color:var(--white)}
+.btn-green:hover:not(:disabled){background:var(--green2)}
+.btn-pink{background:var(--pink);color:var(--green)}
+.btn-outline{background:transparent;color:var(--green);border:2px solid var(--green)}
+.btn-outline:hover{background:var(--green);color:var(--white)}
+.btn-sm{padding:8px 16px;font-size:0.8rem;width:auto;margin-top:0}
+.btn-danger{background:var(--red);color:var(--white)}
+.err{color:var(--red);font-size:0.78rem;margin-top:8px;font-weight:600;display:none}
+.err.show{display:block}
+
+/* ── ADMIN LAYOUT ── */
+.admin-nav{
+  background:var(--green);padding:14px 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  border-bottom:3px solid var(--pink);
+}
+.nav-logo{color:var(--white);font-size:1rem;font-weight:800;display:flex;align-items:center;gap:10px}
+.nav-logo span{background:var(--pink);color:var(--green);font-size:0.65rem;padding:2px 8px;border-radius:20px;font-weight:800}
+.nav-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.branch-sel{
+  padding:7px 12px;border-radius:8px;border:1.5px solid rgba(255,255,255,.3);
+  font-size:0.82rem;font-weight:600;background:rgba(255,255,255,.1);
+  color:var(--white);cursor:pointer;outline:none;
+}
+.branch-sel option{color:#111;background:#fff}
+
+.admin-body{padding:24px 28px;max-width:1100px;margin:0 auto}
+
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.kpi{
+  background:var(--white);border-radius:14px;padding:20px 18px;
+  border-left:4px solid var(--pink);
+  box-shadow:0 2px 12px rgba(0,0,0,.05);
+}
+.kpi-val{font-size:2rem;font-weight:800;color:var(--green)}
+.kpi-lbl{font-size:0.72rem;font-weight:700;color:var(--slate);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px}
+.tab{
+  padding:10px 22px;font-size:0.84rem;font-weight:700;
+  color:var(--slate);cursor:pointer;
+  border-bottom:3px solid transparent;margin-bottom:-2px;
+  transition:all .18s;
+}
+.tab.on{color:var(--green);border-bottom-color:var(--green)}
+.tab-panel{display:none}.tab-panel.on{display:block}
+
+/* ── TABLE CARD ── */
+.tbl-card{background:var(--white);border-radius:14px;padding:20px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.tbl-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.tbl-title{font-size:0.92rem;font-weight:800;color:var(--green)}
+.search{
+  padding:9px 14px;border:1.5px solid var(--border);
+  border-radius:8px;font-size:0.84rem;width:220px;outline:none;background:var(--pearl);
+}
+.search:focus{border-color:var(--pink)}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:0.82rem}
+th{
+  background:var(--green);color:var(--white);
+  padding:10px 14px;text-align:left;
+  font-size:0.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+}
+th:first-child{border-radius:0}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:#2d3a35}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f9f7f4}
+.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.7rem;font-weight:800}
+.b-green{background:#d6f0e4;color:#0d4a2a}
+.b-blue{background:#dbeafe;color:#1e3a8a}
+.b-gold{background:#fef3c7;color:#7c5c00}
+.b-pink{background:#fce8f3;color:var(--green)}
+.b-red{background:var(--red-lt);color:var(--red)}
+
+/* ── MANUAL STAMP FORM ── */
+.manual-card{background:var(--white);border-radius:14px;padding:20px 22px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.04);border-top:4px solid var(--green)}
+.form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg label{margin:0}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--green);color:var(--white);
+  padding:12px 22px;border-radius:10px;
+  font-size:0.84rem;font-weight:700;
+  transform:translateY(80px);transition:transform .28s;
+  z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);
+}
+.toast.up{transform:translateY(0)}
+.toast.t-red{background:var(--red)}
+.toast.t-pink{background:var(--pink);color:var(--green)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .form-row{grid-template-columns:1fr}
+  .admin-body{padding:14px}
+  .admin-nav{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="screen active" id="s-login">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-top">Admin Panel</div>
+      <div style="font-size:2rem;margin-bottom:6px">🍔</div>
+      <div class="login-name">Emboss Circle</div>
+      <div class="login-sub">Staff &amp; Management Dashboard</div>
+    </div>
+    <label>Password</label>
+    <input type="password" id="pwd" placeholder="Enter admin password"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <div class="err" id="pwd-err">Incorrect password. Please try again.</div>
+    <button class="btn btn-green" onclick="doLogin()">Login →</button>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="screen" id="s-admin">
+
+  <!-- NAV -->
+  <div class="admin-nav">
+    <div class="nav-logo">
+      🍔 Emboss Circle
+      <span>Admin</span>
+    </div>
+    <div class="nav-right">
+      <select class="branch-sel" id="branch-filter" onchange="loadAll()">
+        <option value="all">All Branches</option>
+        <option value="olaya">Olaya</option>
+        <option value="masif">Masif</option>
+        <option value="muruj">Muruj</option>
+      </select>
+      <button class="btn btn-pink btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-outline btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val" id="k-members">–</div><div class="kpi-lbl">Total Members</div></div>
+      <div class="kpi"><div class="kpi-val" id="k-today">–</div><div class="kpi-lbl">Stamps Today</div></div>
+      <div class="kpi"><div class="kpi-val" id="k-month">–</div><div class="kpi-lbl">Stamps This Month</div></div>
+      <div class="kpi"><div class="kpi-val" id="k-redeemed">–</div><div class="kpi-lbl">Rewards Redeemed</div></div>
+    </div>
+
+    <!-- MANUAL STAMP -->
+    <div class="manual-card">
+      <div class="tbl-title" style="margin-bottom:14px">➕ Add Stamp Manually</div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Customer Phone</label>
+          <input type="tel" id="m-phone" placeholder="05XXXXXXXX"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+        <div class="fg">
+          <label>Branch</label>
+          <select id="m-branch">
+            <option value="olaya">Olaya</option>
+            <option value="masif">Masif</option>
+            <option value="muruj">Muruj</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>&nbsp;</label>
+          <button class="btn btn-green btn-sm" onclick="manualStamp()">Add Stamp</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab on" onclick="switchTab('customers')">👥 Members</div>
+      <div class="tab" onclick="switchTab('stamps')">⭐ Recent Stamps</div>
+      <div class="tab" onclick="switchTab('redemptions')">🎁 Redemptions</div>
+    </div>
+
+    <!-- CUSTOMERS TAB -->
+    <div class="tab-panel on" id="tab-customers">
+      <div class="tbl-card">
+        <div class="tbl-head">
+          <div class="tbl-title">All Members</div>
+          <input class="search" id="cust-search" placeholder="Search name or phone…" oninput="filterCustomers()">
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th><th>Phone</th><th>Reg. Branch</th>
+                <th>Current Stamps</th><th>Total Visits</th>
+                <th>Meals Earned</th><th>Joined</th>
+              </tr>
+            </thead>
+            <tbody id="cust-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--slate)">Loading members…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAMPS TAB -->
+    <div class="tab-panel" id="tab-stamps">
+      <div class="tbl-card">
+        <div class="tbl-head"><div class="tbl-title">Recent Stamps (Last 100)</div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Phone</th><th>Name</th><th>Branch</th><th>Date</th></tr></thead>
+            <tbody id="stamps-tbody">
+              <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--slate)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- REDEMPTIONS TAB -->
+    <div class="tab-panel" id="tab-redemptions">
+      <div class="tbl-card">
+        <div class="tbl-head"><div class="tbl-title">All Reward Redemptions</div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Phone</th><th>Name</th><th>Branch</th><th>Date &amp; Time</th></tr></thead>
+            <tbody id="red-tbody">
+              <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--slate)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ════════════════════════
+// ⚙️  CONFIG — FILL THESE
+// ════════════════════════
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY';
+const ADMIN_PASS    = 'Emboss@2026';   // ← CHANGE THIS PASSWORD
+const STAMPS_NEEDED = 8;
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let allCustomers = [];
+let allStampsRaw = [];
+let allRedsRaw   = [];
+
+// ── LOGIN / LOGOUT ──
+function doLogin(){
+  const v = document.getElementById('pwd').value;
+  if(v === ADMIN_PASS){
+    document.getElementById('s-login').classList.remove('active');
+    document.getElementById('s-admin').classList.add('active');
+    loadAll();
+  } else {
+    document.getElementById('pwd-err').classList.add('show');
+  }
+}
+function doLogout(){
+  document.getElementById('s-admin').classList.remove('active');
+  document.getElementById('s-login').classList.add('active');
+  document.getElementById('pwd').value='';
+  document.getElementById('pwd-err').classList.remove('show');
+}
+
+// ── LOAD ALL ──
+async function loadAll(){
+  await Promise.all([loadKPIs(), loadCustomers(), loadStamps(), loadRedemptions()]);
+}
+
+// ── KPIs ──
+async function loadKPIs(){
+  const br = document.getElementById('branch-filter').value;
+  const today = new Date().toISOString().split('T')[0];
+  const month = today.slice(0,7)+'-01';
+
+  let qC = db.from('customers').select('id',{count:'exact',head:true});
+  if(br!=='all') qC=qC.eq('registered_branch',br);
+  const {count:members} = await qC;
+
+  let qT = db.from('stamps').select('id',{count:'exact',head:true}).gte('stamp_date',today);
+  if(br!=='all') qT=qT.eq('branch',br);
+  const {count:todayC} = await qT;
+
+  let qM = db.from('stamps').select('id',{count:'exact',head:true}).gte('stamp_date',month);
+  if(br!=='all') qM=qM.eq('branch',br);
+  const {count:monthC} = await qM;
+
+  let qR = db.from('redemptions').select('id',{count:'exact',head:true});
+  if(br!=='all') qR=qR.eq('branch',br);
+  const {count:redC} = await qR;
+
+  document.getElementById('k-members').textContent  = members  || 0;
+  document.getElementById('k-today').textContent    = todayC   || 0;
+  document.getElementById('k-month').textContent    = monthC   || 0;
+  document.getElementById('k-redeemed').textContent = redC     || 0;
+}
+
+// ── CUSTOMERS ──
+async function loadCustomers(){
+  const br = document.getElementById('branch-filter').value;
+  let q = db.from('customers').select('*').order('created_at',{ascending:false});
+  if(br!=='all') q=q.eq('registered_branch',br);
+  const {data} = await q;
+  allCustomers = data||[];
+
+  const {data:stamps} = await db.from('stamps').select('phone,stamp_date');
+  const {data:reds}   = await db.from('redemptions').select('phone,redeemed_at').order('redeemed_at',{ascending:false});
+  allStampsRaw = stamps||[];
+  allRedsRaw   = reds||[];
+
+  renderCustomers(allCustomers);
+}
+
+function renderCustomers(list){
+  const tbody = document.getElementById('cust-tbody');
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--slate)">No members yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(c=>{
+    const myStamps = allStampsRaw.filter(s=>s.phone===c.phone);
+    const myReds   = allRedsRaw.filter(r=>r.phone===c.phone);
+    const lastRed  = myReds.length>0 ? myReds[0].redeemed_at.split('T')[0] : null;
+    const cycle    = lastRed ? myStamps.filter(s=>s.stamp_date>lastRed) : myStamps;
+    const cur      = Math.min(cycle.length, STAMPS_NEEDED);
+    const joined   = new Date(c.created_at).toLocaleDateString('en-GB');
+    const brClass  = {olaya:'b-green',masif:'b-blue',muruj:'b-gold'}[c.registered_branch]||'b-green';
+    const rewardReady = cur>=STAMPS_NEEDED;
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-family:monospace">${c.phone}</td>
+      <td><span class="badge ${brClass}">${c.registered_branch}</span></td>
+      <td>
+        <span style="font-weight:800;color:var(--green)">${cur}/${STAMPS_NEEDED}</span>
+        ${rewardReady?'&nbsp;<span class="badge b-pink">REWARD READY</span>':''}
+      </td>
+      <td>${myStamps.length}</td>
+      <td>${c.total_redeemed||0}</td>
+      <td>${joined}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterCustomers(){
+  const q = document.getElementById('cust-search').value.toLowerCase();
+  const filtered = allCustomers.filter(c=>
+    c.name.toLowerCase().includes(q) || c.phone.includes(q)
+  );
+  renderCustomers(filtered);
+}
+
+// ── STAMPS ──
+async function loadStamps(){
+  const br = document.getElementById('branch-filter').value;
+  let q = db.from('stamps').select('*, customers(name)').order('stamp_date',{ascending:false}).limit(100);
+  if(br!=='all') q=q.eq('branch',br);
+  const {data} = await q;
+  const tbody = document.getElementById('stamps-tbody');
+  if(!data||!data.length){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--slate)">No stamps yet</td></tr>';
+    return;
+  }
+  const brClass={olaya:'b-green',masif:'b-blue',muruj:'b-gold'};
+  tbody.innerHTML = data.map(s=>`<tr>
+    <td style="font-family:monospace">${s.phone}</td>
+    <td>${s.customers?.name||'–'}</td>
+    <td><span class="badge ${brClass[s.branch]||'b-green'}">${s.branch}</span></td>
+    <td>${s.stamp_date}</td>
+  </tr>`).join('');
+}
+
+// ── REDEMPTIONS ──
+async function loadRedemptions(){
+  const br = document.getElementById('branch-filter').value;
+  let q = db.from('redemptions').select('*, customers(name)').order('redeemed_at',{ascending:false});
+  if(br!=='all') q=q.eq('branch',br);
+  const {data} = await q;
+  const tbody = document.getElementById('red-tbody');
+  if(!data||!data.length){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--slate)">No redemptions yet</td></tr>';
+    return;
+  }
+  const brClass={olaya:'b-green',masif:'b-blue',muruj:'b-gold'};
+  tbody.innerHTML = data.map(r=>`<tr>
+    <td style="font-family:monospace">${r.phone}</td>
+    <td>${r.customers?.name||'–'}</td>
+    <td><span class="badge ${brClass[r.branch]||'b-green'}">${r.branch}</span></td>
+    <td>${new Date(r.redeemed_at).toLocaleString('en-GB')}</td>
+  </tr>`).join('');
+}
+
+// ── MANUAL STAMP ──
+async function manualStamp(){
+  const phone  = document.getElementById('m-phone').value.trim().replace(/[^0-9]/g,'');
+  const branch = document.getElementById('m-branch').value;
+  if(!/^[0-9]{9,15}$/.test(phone)){ showToast('Enter a valid phone number','t-red'); return; }
+
+  const today = new Date().toISOString().split('T')[0];
+  const {data:cust} = await db.from('customers').select('phone').eq('phone',phone).maybeSingle();
+  if(!cust){ showToast('Customer not found — they must register first','t-red'); return; }
+
+  const {data:ex} = await db.from('stamps').select('id').eq('phone',phone).eq('stamp_date',today).limit(1);
+  if(ex&&ex.length>0){ showToast('Already stamped today for this number','t-red'); return; }
+
+  const {error} = await db.from('stamps').insert([{phone,branch,stamp_date:today}]);
+  if(error){ showToast('Error adding stamp','t-red'); return; }
+  showToast('✅ Stamp added for '+phone,'t-pink');
+  document.getElementById('m-phone').value='';
+  loadAll();
+}
+
+// ── TABS ──
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('on',['customers','stamps','redemptions'][i]===name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+}
+
+// ── EXPORT CSV ──
+function exportCSV(){
+  if(!allCustomers.length){ showToast('No data to export','t-red'); return; }
+  const rows=[['Name','Phone','Reg Branch','Total Visits','Meals Earned','Joined']];
+  allCustomers.forEach(c=>{
+    const myS=allStampsRaw.filter(s=>s.phone===c.phone);
+    rows.push([c.name,c.phone,c.registered_branch,myS.length,c.total_redeemed||0,new Date(c.created_at).toLocaleDateString('en-GB')]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='emboss_circle_members_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  showToast('CSV exported ✅');
+}
+
+// ── TOAST ──
+let tTmr;
+function showToast(msg,cls=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+(cls||'');
+  t.classList.add('up');
+  clearTimeout(tTmr);
+  tTmr=setTimeout(()=>t.classList.remove('up'),3400);
+}
+</script>
+</body>
+</html>
