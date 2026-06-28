@@ -405,6 +405,31 @@ html,body{
 .toast.t-red{background:var(--red)}
 
 /* ════════════════════════════════
+   TAP ARROW ANIMATION
+════════════════════════════════ */
+.tap-arrow{
+  text-align:center;
+  margin-bottom:6px;
+  animation:arrowBounce .8s ease-in-out infinite alternate;
+}
+.arrow-bounce{
+  font-size:2rem;
+  display:block;
+  animation:arrowBounce .6s ease-in-out infinite alternate;
+}
+.arrow-txt{
+  font-size:0.72rem;
+  font-weight:800;
+  color:var(--pink2);
+  letter-spacing:.15em;
+  margin-top:2px;
+}
+@keyframes arrowBounce{
+  from{transform:translateY(0)}
+  to{transform:translateY(-8px)}
+}
+
+/* ════════════════════════════════
    LOADING
 ════════════════════════════════ */
 .loading-wrap{
@@ -560,8 +585,8 @@ html,body{
     <!-- Today alert -->
     <div class="alert a-green" id="a-today" style="display:none">
       <span class="ai">✅</span>
-      <div><b>Stamp collected today!</b><br>
-      <span style="font-size:0.74rem">Come back tomorrow for your next stamp 😊</span></div>
+      <div><b>Stamp already collected!</b><br>
+      <span style="font-size:0.74rem" id="wait-timer">You can get your next stamp after 2 hours ⏱</span></div>
     </div>
 
     <!-- Reward alert -->
@@ -571,11 +596,17 @@ html,body{
       <span style="font-size:0.74rem">Show this screen to your cashier to claim</span></div>
     </div>
 
-    <!-- Add stamp -->
-    <button class="btn btn-pink" id="btn-stamp" onclick="doStamp()" style="display:none">
-      <span class="btn-txt">⭐ Add Today's Stamp</span>
-      <div class="spin"></div>
-    </button>
+    <!-- Add stamp with animated arrow -->
+    <div id="stamp-btn-wrap" style="display:none;position:relative">
+      <div class="tap-arrow" id="tap-arrow">
+        <div class="arrow-bounce">👆</div>
+        <div class="arrow-txt">TAP HERE</div>
+      </div>
+      <button class="btn btn-pink" id="btn-stamp" onclick="doStamp()">
+        <span class="btn-txt">⭐ Collect My Stamp</span>
+        <div class="spin"></div>
+      </button>
+    </div>
 
     <!-- Claim -->
     <button class="btn btn-green" id="btn-claim" onclick="go('s-reward')" style="display:none">
@@ -846,8 +877,7 @@ async function doRegister(){
     );
     if(error) throw error;
     A.cust=data;
-    await addStampDB();
-    await loadCard(true);
+    await loadCard(false);
   } catch(e){
     if(e.code==='23505'){ showToast('Already registered','t-red'); go('s-phone'); }
     else showToast('Registration failed. Try again.','t-red');
@@ -875,7 +905,17 @@ async function loadCard(isNew=false){
     A.stamps  = Math.min(cycle.length,STAMPS_NEEDED);
     A.visits  = stamps.length;
     A.redeemed= A.cust.total_redeemed||0;
-    A.today   = cycle.some(s=>s.stamp_date===td);
+    // 2-hour rule: check if last stamp was within 2 hours
+    const {data:recentStamp}=await tw(db.from('stamps').select('created_at').eq('phone',A.phone).order('created_at',{ascending:false}).limit(1));
+    if(recentStamp && recentStamp.length>0 && recentStamp[0].created_at){
+      const lastStamp = new Date(recentStamp[0].created_at);
+      const twoHrsAgo = new Date(Date.now() - 2*60*60*1000);
+      A.today = lastStamp > twoHrsAgo;
+      A.lastStampTime = lastStamp;
+    } else {
+      A.today = false;
+      A.lastStampTime = null;
+    }
 
     renderCard(isNew);
     go('s-stamps');
@@ -926,8 +966,17 @@ function renderCard(anim=false){
     document.getElementById('reward-title').textContent=`${c.name}, you earned it!`;
   } else if(A.today){
     document.getElementById('a-today').style.display='flex';
+    // Show countdown
+    if(A.lastStampTime){
+      const nextT = new Date(A.lastStampTime.getTime() + 2*60*60*1000);
+      const minsLeft = Math.ceil((nextT - Date.now()) / 60000);
+      const el = document.getElementById('wait-timer');
+      if(el) el.textContent = minsLeft > 0
+        ? 'Next stamp available in ' + minsLeft + ' minutes ⏱'
+        : 'Next stamp available soon!';
+    }
   } else {
-    document.getElementById('btn-stamp').style.display='flex';
+    document.getElementById('stamp-btn-wrap').style.display='block';
   }
 }
 
@@ -936,9 +985,19 @@ async function doStamp(){
   const btn=document.getElementById('btn-stamp');
   busy(btn,true);
   try{
-    const td=todayStr();
-    const {data:ex}=await tw(db.from('stamps').select('id').eq('phone',A.phone).eq('stamp_date',td).limit(1));
-    if(ex&&ex.length>0){ A.today=true; renderCard(); showToast('Already stamped today!','t-pink'); return; }
+    // 2-hour rule guard
+    const {data:recentCheck}=await tw(db.from('stamps').select('created_at').eq('phone',A.phone).order('created_at',{ascending:false}).limit(1));
+    if(recentCheck && recentCheck.length>0 && recentCheck[0].created_at){
+      const lastS = new Date(recentCheck[0].created_at);
+      const twoHrsAgo2 = new Date(Date.now() - 2*60*60*1000);
+      if(lastS > twoHrsAgo2){
+        A.today=true; renderCard(false);
+        const nextTime = new Date(lastS.getTime() + 2*60*60*1000);
+        const minsLeft = Math.ceil((nextTime - Date.now()) / 60000);
+        showToast('Next stamp available in ' + minsLeft + ' minutes ⏱','t-pink');
+        return;
+      }
+    }
     await addStampDB();
     A.stamps++; A.visits++; A.today=true;
     renderCard(true);
@@ -951,7 +1010,8 @@ async function doStamp(){
 }
 
 async function addStampDB(){
-  const {error}=await tw(db.from('stamps').insert([{phone:A.phone,branch:BRANCH,stamp_date:todayStr()}]));
+  const now = new Date().toISOString();
+  const {error}=await tw(db.from('stamps').insert([{phone:A.phone,branch:BRANCH,stamp_date:todayStr(),created_at:now}]));
   if(error) throw error;
 }
 
@@ -972,7 +1032,7 @@ async function doConfirm(){
 
 /* ── RESET ── */
 function resetApp(){
-  A={phone:'',cust:null,stamps:0,visits:0,redeemed:0,today:false};
+  A={phone:'',cust:null,stamps:0,visits:0,redeemed:0,today:false,lastStampTime:null};
   document.getElementById('phone-inp').value='';
   document.getElementById('phone-err').classList.remove('show');
   document.getElementById('phone-inp').classList.remove('has-error');
@@ -981,7 +1041,13 @@ function resetApp(){
 }
 
 /* ── HELPERS ── */
-function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function todayStr(){
+  // Use device local time (Saudi Arabia UTC+3) not UTC
+  const d = new Date();
+  const offset = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - offset * 60000);
+  return local.toISOString().split('T')[0];
+}
 
 let tTmr;
 function showToast(msg,cls=''){
