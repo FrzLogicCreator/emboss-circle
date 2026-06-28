@@ -235,7 +235,7 @@ tr:hover td{background:#f9f7f4}
               <tr>
                 <th>Name</th><th>Phone</th><th>Reg. Branch</th>
                 <th>Current Stamps</th><th>Total Visits</th>
-                <th>Meals Earned</th><th>Joined</th>
+                <th>Meals Earned</th><th>Joined (Date & Time)</th>
               </tr>
             </thead>
             <tbody id="cust-tbody">
@@ -378,7 +378,7 @@ function renderCustomers(list){
     const lastRed  = myReds.length>0 ? myReds[0].redeemed_at.split('T')[0] : null;
     const cycle    = lastRed ? myStamps.filter(s=>s.stamp_date>lastRed) : myStamps;
     const cur      = Math.min(cycle.length, STAMPS_NEEDED);
-    const joined   = new Date(c.created_at).toLocaleDateString('en-GB');
+    const joined   = new Date(c.created_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
     const brClass  = {olaya:'b-green',masif:'b-blue',muruj:'b-gold'}[c.registered_branch]||'b-green';
     const rewardReady = cur>=STAMPS_NEEDED;
     return `<tr>
@@ -420,7 +420,7 @@ async function loadStamps(){
     <td style="font-family:monospace">${s.phone}</td>
     <td>${s.customers?.name||'–'}</td>
     <td><span class="badge ${brClass[s.branch]||'b-green'}">${s.branch}</span></td>
-    <td>${s.stamp_date}</td>
+    <td>${s.stamp_date} ${s.created_at ? new Date(s.created_at).toLocaleString('en-GB',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
   </tr>`).join('');
 }
 
@@ -440,7 +440,7 @@ async function loadRedemptions(){
     <td style="font-family:monospace">${r.phone}</td>
     <td>${r.customers?.name||'–'}</td>
     <td><span class="badge ${brClass[r.branch]||'b-green'}">${r.branch}</span></td>
-    <td>${new Date(r.redeemed_at).toLocaleString('en-GB')}</td>
+    <td>${new Date(r.redeemed_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
   </tr>`).join('');
 }
 
@@ -479,7 +479,7 @@ function exportCSV(){
   const rows=[['Name','Phone','Reg Branch','Total Visits','Meals Earned','Joined']];
   allCustomers.forEach(c=>{
     const myS=allStampsRaw.filter(s=>s.phone===c.phone);
-    rows.push([c.name,c.phone,c.registered_branch,myS.length,c.total_redeemed||0,new Date(c.created_at).toLocaleDateString('en-GB')]);
+    rows.push([c.name,c.phone,c.registered_branch,myS.length,c.total_redeemed||0,new Date(c.created_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})]);
   });
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
   const a=document.createElement('a');
