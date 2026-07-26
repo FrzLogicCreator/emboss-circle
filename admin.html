@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Emboss Circle — Admin Panel</title>
+<title>طَعم يختِم · Stamped Flavor — Admin</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -149,7 +149,7 @@ tr:hover td{background:#f9f7f4}
     <div class="login-logo">
       <div class="login-logo-top">Admin Panel</div>
       <div style="font-size:2rem;margin-bottom:6px">🍔</div>
-      <div class="login-name">Emboss Circle</div>
+      <div class="login-name" style="direction:rtl">طَعم يختِم · Stamped Flavor</div>
       <div class="login-sub">Staff &amp; Management Dashboard</div>
     </div>
     <label>Password</label>
@@ -166,7 +166,7 @@ tr:hover td{background:#f9f7f4}
   <!-- NAV -->
   <div class="admin-nav">
     <div class="nav-logo">
-      🍔 Emboss Circle
+      🍔 طَعم يختِم · Stamped Flavor
       <span>Admin</span>
     </div>
     <div class="nav-right">
@@ -289,7 +289,7 @@ tr:hover td{background:#f9f7f4}
 const SUPABASE_URL  = 'https://funkvzxbhpnjgjhvwlbd.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1bmt2enhiaHBuamdqaHZ3bGJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1NzY1MzEsImV4cCI6MjA5ODE1MjUzMX0.HGwLWyJaR3tUb7TWA0NPvH2TuPCNIbrb7LhR5c4s9Ys';
 const ADMIN_PASS    = 'Emboss@2026';   // ← CHANGE THIS PASSWORD
-const STAMPS_NEEDED = 8;
+const STAMPS_NEEDED = 6;
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
