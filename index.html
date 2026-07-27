@@ -6,10 +6,20 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Emboss Rewards">
+<meta name="apple-mobile-web-app-title" id="apple-title" content="Emboss Rewards">
 <meta name="application-name" content="Emboss Rewards">
 <meta name="theme-color" content="#104237">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" id="pwa-manifest" href="manifest.json">
+<script>
+// Set correct manifest per branch BEFORE page loads
+(function(){
+  var p = new URLSearchParams(window.location.search).get('branch') || 'olaya';
+  var validBranches = ['olaya','masif','muruj'];
+  if(!validBranches.includes(p)) p = 'olaya';
+  var el = document.getElementById('pwa-manifest');
+  if(el) el.href = 'manifest-' + p + '.json';
+})();
+</script>
 <title>Emboss Rewards</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -561,9 +571,9 @@ html,body{
 
       <!-- Branches + local message -->
       <div style="font-size:0.74rem;color:var(--slate);direction:rtl;line-height:1.75;margin-bottom:12px">
-        طوابعك صالحة في <strong style="color:var(--green)">جميع فروعنا</strong> — زُر أي فرع وستُحسب لك
+        طوابعك صالحة في <strong style="color:var(--green)">جميع فروعنا</strong> — قُم بزيارة أي فرع وستُحسب لك
         <br>
-        <span style="font-size:0.71rem;opacity:.75">من قلب تبوك — نُكافئ وفاءك 🤝</span>
+        <span style="font-size:0.71rem;opacity:.75">إمبوس طعم يختم</span>
       </div>
 
       <!-- Made in Saudi -->
