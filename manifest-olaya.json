@@ -1,0 +1,14 @@
+{
+  "name": "Emboss Rewards — Olaya",
+  "short_name": "Emboss Olaya",
+  "description": "Emboss Burgers Loyalty Rewards — Olaya Branch",
+  "start_url": "/emboss-circle/?branch=olaya",
+  "display": "standalone",
+  "background_color": "#104237",
+  "theme_color": "#104237",
+  "orientation": "portrait",
+  "icons": [
+    {"src": "icon-192.png","sizes": "192x192","type": "image/png","purpose": "any maskable"},
+    {"src": "icon-512.png","sizes": "512x512","type": "image/png","purpose": "any maskable"}
+  ]
+}
