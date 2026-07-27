@@ -1,0 +1,14 @@
+{
+  "name": "Emboss Rewards — Muruj",
+  "short_name": "Emboss Muruj",
+  "description": "Emboss Burgers Loyalty Rewards — Muruj Branch",
+  "start_url": "/emboss-circle/?branch=muruj",
+  "display": "standalone",
+  "background_color": "#104237",
+  "theme_color": "#104237",
+  "orientation": "portrait",
+  "icons": [
+    {"src": "icon-192.png","sizes": "192x192","type": "image/png","purpose": "any maskable"},
+    {"src": "icon-512.png","sizes": "512x512","type": "image/png","purpose": "any maskable"}
+  ]
+}
