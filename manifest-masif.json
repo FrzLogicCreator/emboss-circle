@@ -1,0 +1,14 @@
+{
+  "name": "Emboss Rewards — Masif",
+  "short_name": "Emboss Masif",
+  "description": "Emboss Burgers Loyalty Rewards — Masif Branch",
+  "start_url": "/emboss-circle/?branch=masif",
+  "display": "standalone",
+  "background_color": "#104237",
+  "theme_color": "#104237",
+  "orientation": "portrait",
+  "icons": [
+    {"src": "icon-192.png","sizes": "192x192","type": "image/png","purpose": "any maskable"},
+    {"src": "icon-512.png","sizes": "512x512","type": "image/png","purpose": "any maskable"}
+  ]
+}
