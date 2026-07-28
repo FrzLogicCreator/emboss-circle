@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera Test</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:sans-serif;
+  background:#0D1B2A;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  gap:20px;
+}
+h1{color:#fff;font-size:1.2rem;text-align:center;opacity:.8}
+
+/* Camera box */
+#camera-box{
+  width:100%;max-width:400px;
+  aspect-ratio:3/4;
+  background:#111;
+  border-radius:16px;
+  overflow:hidden;
+  display:none;
+  position:relative;
+  border:3px solid #C9A84C;
+}
+#video{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Captured photo */
+#photo-box{
+  width:100%;max-width:400px;
+  aspect-ratio:3/4;
+  background:#111;
+  border-radius:16px;
+  overflow:hidden;
+  display:none;
+  border:3px solid #4ADE80;
+}
+#canvas{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Status */
+#status{
+  color:#fff;font-size:0.9rem;
+  text-align:center;
+  background:rgba(255,255,255,.08);
+  padding:10px 20px;border-radius:30px;
+  min-width:200px;
+}
+
+/* Buttons */
+.btn{
+  padding:16px 40px;
+  font-size:1rem;font-weight:700;
+  border:none;border-radius:12px;
+  cursor:pointer;width:100%;max-width:400px;
+  transition:all .2s;
+}
+.btn:active{transform:scale(.97)}
+#btn-open{background:#C9A84C;color:#0D1B2A}
+#btn-open:hover{background:#B8943C}
+#btn-capture{background:#4ADE80;color:#0D1B2A;display:none}
+#btn-capture:hover{background:#22c55e}
+#btn-retake{background:#6B7A8D;color:#fff;display:none}
+#btn-retake:hover{background:#4a5568}
+</style>
+</head>
+<body>
+
+<h1>📷 Camera Test</h1>
+
+<div id="status">Press the button to open camera</div>
+
+<!-- Live camera view -->
+<div id="camera-box">
+  <video id="video" autoplay playsinline muted></video>
+</div>
+
+<!-- Captured photo -->
+<div id="photo-box">
+  <canvas id="canvas"></canvas>
+</div>
+
+<!-- Buttons -->
+<button class="btn" id="btn-open"    onclick="openCamera()">📷 Open Camera</button>
+<button class="btn" id="btn-capture" onclick="capturePhoto()">✅ Capture Photo</button>
+<button class="btn" id="btn-retake"  onclick="retake()">🔄 Retake</button>
+
+<script>
+let stream = null;
+const video   = document.getElementById('video');
+const canvas  = document.getElementById('canvas');
+const status  = document.getElementById('status');
+const camBox  = document.getElementById('camera-box');
+const photoBox= document.getElementById('photo-box');
+const btnOpen = document.getElementById('btn-open');
+const btnCap  = document.getElementById('btn-capture');
+const btnRet  = document.getElementById('btn-retake');
+
+async function openCamera() {
+  status.textContent = 'Opening camera...';
+  try {
+    // Request front camera
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
+      audio: false
+    });
+
+    video.srcObject = stream;
+    await video.play();
+
+    // Show camera, hide photo
+    camBox.style.display   = 'block';
+    photoBox.style.display = 'none';
+    btnOpen.style.display  = 'none';
+    btnCap.style.display   = 'block';
+    btnRet.style.display   = 'none';
+
+    status.textContent = '✅ Camera is working! You can see yourself.';
+    status.style.background = 'rgba(74,222,128,.15)';
+
+  } catch(err) {
+    status.textContent = '❌ Error: ' + err.message;
+    status.style.background = 'rgba(220,38,38,.2)';
+    console.error(err);
+  }
+}
+
+function capturePhoto() {
+  // Set canvas size to match video
+  canvas.width  = video.videoWidth  || 640;
+  canvas.height = video.videoHeight || 480;
+
+  // Draw current video frame onto canvas
+  const ctx = canvas.getContext('2d');
+  // Mirror the image (selfie style)
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0);
+
+  // Stop camera stream
+  if(stream) stream.getTracks().forEach(t => t.stop());
+
+  // Show captured photo
+  camBox.style.display   = 'none';
+  photoBox.style.display = 'block';
+  btnCap.style.display   = 'none';
+  btnRet.style.display   = 'block';
+  btnOpen.style.display  = 'none';
+
+  status.textContent = '📸 Photo captured successfully!';
+  status.style.background = 'rgba(74,222,128,.2)';
+}
+
+function retake() {
+  // Reset everything
+  photoBox.style.display = 'none';
+  camBox.style.display   = 'none';
+  btnRet.style.display   = 'none';
+  btnCap.style.display   = 'none';
+  btnOpen.style.display  = 'block';
+  status.textContent = 'Press the button to open camera';
+  status.style.background = 'rgba(255,255,255,.08)';
+}
+</script>
+</body>
+</html>
