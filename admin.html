@@ -367,10 +367,13 @@ async function loadCustomers(){
     if(pageC.length < PAGE_SIZE) break;
     fromC += PAGE_SIZE;
   }
-  const data = allCusts;
-  if(br!=='all') q=q.eq('registered_branch',br);
+  if(br!=='all'){
+    allCustomers = allCusts.filter(c=>c.registered_branch===br);
+  } else {
+    allCustomers = allCusts;
+  }
   const {data} = await q;
-  allCustomers = allCusts||[];
+
 
   // Fetch ALL stamps using pagination (Supabase max 1000 per request)
   let allStamps = [];
