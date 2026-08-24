@@ -353,13 +353,13 @@ async function loadKPIs(){
 // ── CUSTOMERS ──
 async function loadCustomers(){
   const br = document.getElementById('branch-filter').value;
-  let q = db.from('customers').select('*').order('created_at',{ascending:false});
+  let q = db.from('customers').select('*').order('created_at',{ascending:false}).limit(10000);
   if(br!=='all') q=q.eq('registered_branch',br);
   const {data} = await q;
   allCustomers = data||[];
 
-  const {data:stamps} = await db.from('stamps').select('phone,stamp_date');
-  const {data:reds}   = await db.from('redemptions').select('phone,redeemed_at').order('redeemed_at',{ascending:false});
+  const {data:stamps} = await db.from('stamps').select('phone,stamp_date').limit(10000);
+  const {data:reds}   = await db.from('redemptions').select('phone,redeemed_at').order('redeemed_at',{ascending:false}).limit(10000);
   allStampsRaw = stamps||[];
   allRedsRaw   = reds||[];
 
@@ -427,7 +427,7 @@ async function loadStamps(){
 // ── REDEMPTIONS ──
 async function loadRedemptions(){
   const br = document.getElementById('branch-filter').value;
-  let q = db.from('redemptions').select('*, customers(name)').order('redeemed_at',{ascending:false});
+  let q = db.from('redemptions').select('*, customers(name)').order('redeemed_at',{ascending:false}).limit(10000);
   if(br!=='all') q=q.eq('branch',br);
   const {data} = await q;
   const tbody = document.getElementById('red-tbody');
