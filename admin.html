@@ -139,6 +139,13 @@ tr:hover td{background:#f9f7f4}
   .admin-body{padding:14px}
   .admin-nav{padding:12px 16px}
 }
+
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;flex-wrap:wrap}
+.pg-btn{padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--green);font-size:.8rem;font-weight:700;cursor:pointer;transition:all .18s;font-family:inherit}
+.pg-btn:hover:not(:disabled){background:var(--green);color:#fff;border-color:var(--green)}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed}
+.pg-btn.active{background:var(--green);color:#fff;border-color:var(--green)}
+.pg-info{font-size:.82rem;color:var(--slate);font-weight:600}
 </style>
 </head>
 <body>
@@ -243,6 +250,7 @@ tr:hover td{background:#f9f7f4}
             </tbody>
           </table>
         </div>
+        <div id="pagination-wrap" class="pagination"></div>
       </div>
     </div>
 
@@ -290,7 +298,10 @@ const SUPABASE_URL  = 'https://funkvzxbhpnjgjhvwlbd.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1bmt2enhiaHBuamdqaHZ3bGJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1NzY1MzEsImV4cCI6MjA5ODE1MjUzMX0.HGwLWyJaR3tUb7TWA0NPvH2TuPCNIbrb7LhR5c4s9Ys';
 const ADMIN_PASS    = 'Emboss@2026';   // ← CHANGE THIS PASSWORD
 const STAMPS_NEEDED = 6;
-const PAGE_SIZE = 1000; // Supabase max rows per request
+const PAGE_SIZE = 1000;    // Supabase max rows per request
+const PAGE_UI   = 70;      // Members shown per page
+let currentPage = 1;       // Current UI page
+let filteredCustomers = []; // Filtered list for search/branch
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
@@ -354,194 +365,39 @@ async function loadKPIs(){
 // ── CUSTOMERS ──
 async function loadCustomers(){
   const br = document.getElementById('branch-filter').value;
-  // Fetch ALL customers using pagination
-  let allCusts = [];
-  let fromC = 0;
+  let allCusts=[],fromC=0;
   while(true){
-    const {data:pageC,error:pageCErr} = await db.from('customers')
-      .select('*')
-      .order('created_at',{ascending:false})
-      .range(fromC, fromC + PAGE_SIZE - 1);
-    if(pageCErr || !pageC || pageC.length === 0) break;
-    allCusts = allCusts.concat(pageC);
-    if(pageC.length < PAGE_SIZE) break;
-    fromC += PAGE_SIZE;
+    const{data:pageC,error:pCErr}=await db.from('customers')
+      .select('*').order('created_at',{ascending:false})
+      .range(fromC,fromC+PAGE_SIZE-1);
+    if(pCErr||!pageC||pageC.length===0) break;
+    allCusts=allCusts.concat(pageC);
+    if(pageC.length<PAGE_SIZE) break;
+    fromC+=PAGE_SIZE;
   }
-  if(br!=='all'){
-    allCustomers = allCusts.filter(c=>c.registered_branch===br);
-  } else {
-    allCustomers = allCusts;
-  }
-  const {data} = await q;
-
-
-  // Fetch ALL stamps using pagination (Supabase max 1000 per request)
-  let allStamps = [];
-  let from = 0;
-  
+  allCustomers = br==='all' ? allCusts : allCusts.filter(c=>c.registered_branch===br);
+  let allStamps=[],fromS=0;
   while(true){
-    const {data:page,error:pageErr} = await db.from('stamps')
-      .select('phone,stamp_date')
-      .range(from, from + PAGE_SIZE - 1);
-    if(pageErr || !page || page.length === 0) break;
-    allStamps = allStamps.concat(page);
-    if(page.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
+    const{data:pageS,error:pSErr}=await db.from('stamps')
+      .select('phone,stamp_date').range(fromS,fromS+PAGE_SIZE-1);
+    if(pSErr||!pageS||pageS.length===0) break;
+    allStamps=allStamps.concat(pageS);
+    if(pageS.length<PAGE_SIZE) break;
+    fromS+=PAGE_SIZE;
   }
-  const stamps = allStamps;
-  // Fetch ALL redemptions using pagination
-  let allReds = [];
-  let fromR = 0;
+  allStampsRaw=allStamps;
+  let allReds=[],fromR=0;
   while(true){
-    const {data:pageR,error:pageRErr} = await db.from('redemptions')
-      .select('phone,redeemed_at')
-      .order('redeemed_at',{ascending:false})
-      .range(fromR, fromR + PAGE_SIZE - 1);
-    if(pageRErr || !pageR || pageR.length === 0) break;
-    allReds = allReds.concat(pageR);
-    if(pageR.length < PAGE_SIZE) break;
-    fromR += PAGE_SIZE;
+    const{data:pageR,error:pRErr}=await db.from('redemptions')
+      .select('phone,redeemed_at').order('redeemed_at',{ascending:false})
+      .range(fromR,fromR+PAGE_SIZE-1);
+    if(pRErr||!pageR||pageR.length===0) break;
+    allReds=allReds.concat(pageR);
+    if(pageR.length<PAGE_SIZE) break;
+    fromR+=PAGE_SIZE;
   }
-  const reds = allReds;
-  allStampsRaw = stamps||[];
-  allRedsRaw   = reds||[];
-
-  renderCustomers(allCustomers);
+  allRedsRaw=allReds;
+  currentPage=1;
+  filteredCustomers=allCustomers;
+  renderCustomers(filteredCustomers);
 }
-
-function renderCustomers(list){
-  const tbody = document.getElementById('cust-tbody');
-  if(!list.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--slate)">No members yet</td></tr>';
-    return;
-  }
-  tbody.innerHTML = list.map(c=>{
-    const myStamps = allStampsRaw.filter(s=>s.phone===c.phone);
-    const myReds   = allRedsRaw.filter(r=>r.phone===c.phone);
-    const lastRed  = myReds.length>0 ? myReds[0].redeemed_at.split('T')[0] : null;
-    const cycle    = lastRed ? myStamps.filter(s=>s.stamp_date>lastRed) : myStamps;
-    const cur      = Math.min(cycle.length, STAMPS_NEEDED);
-    const joined   = new Date(c.created_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const brClass  = {olaya:'b-green',masif:'b-blue',muruj:'b-gold'}[c.registered_branch]||'b-green';
-    const rewardReady = cur>=STAMPS_NEEDED;
-    return `<tr>
-      <td><strong>${c.name}</strong></td>
-      <td style="font-family:monospace">${c.phone}</td>
-      <td><span class="badge ${brClass}">${c.registered_branch}</span></td>
-      <td>
-        <span style="font-weight:800;color:var(--green)">${cur}/${STAMPS_NEEDED}</span>
-        ${rewardReady?'&nbsp;<span class="badge b-pink">REWARD READY</span>':''}
-      </td>
-      <td>${myStamps.length}</td>
-      <td>${c.total_redeemed||0}</td>
-      <td>${joined}</td>
-    </tr>`;
-  }).join('');
-}
-
-function filterCustomers(){
-  const q = document.getElementById('cust-search').value.toLowerCase();
-  const filtered = allCustomers.filter(c=>
-    c.name.toLowerCase().includes(q) || c.phone.includes(q)
-  );
-  renderCustomers(filtered);
-}
-
-// ── STAMPS ──
-async function loadStamps(){
-  const br = document.getElementById('branch-filter').value;
-  let q = db.from('stamps').select('*, customers(name)').order('stamp_date',{ascending:false}).limit(100);
-  if(br!=='all') q=q.eq('branch',br);
-  const {data} = await q;
-  const tbody = document.getElementById('stamps-tbody');
-  if(!data||!data.length){
-    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--slate)">No stamps yet</td></tr>';
-    return;
-  }
-  const brClass={olaya:'b-green',masif:'b-blue',muruj:'b-gold'};
-  tbody.innerHTML = data.map(s=>`<tr>
-    <td style="font-family:monospace">${s.phone}</td>
-    <td>${s.customers?.name||'–'}</td>
-    <td><span class="badge ${brClass[s.branch]||'b-green'}">${s.branch}</span></td>
-    <td>${s.stamp_date} ${s.created_at ? new Date(s.created_at).toLocaleString('en-GB',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
-  </tr>`).join('');
-}
-
-// ── REDEMPTIONS ──
-async function loadRedemptions(){
-  const br = document.getElementById('branch-filter').value;
-  let q = db.from('redemptions').select('*, customers(name)').order('redeemed_at',{ascending:false}).limit(10000);
-  if(br!=='all') q=q.eq('branch',br);
-  const {data} = await q;
-  const tbody = document.getElementById('red-tbody');
-  if(!data||!data.length){
-    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--slate)">No redemptions yet</td></tr>';
-    return;
-  }
-  const brClass={olaya:'b-green',masif:'b-blue',muruj:'b-gold'};
-  tbody.innerHTML = data.map(r=>`<tr>
-    <td style="font-family:monospace">${r.phone}</td>
-    <td>${r.customers?.name||'–'}</td>
-    <td><span class="badge ${brClass[r.branch]||'b-green'}">${r.branch}</span></td>
-    <td>${new Date(r.redeemed_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
-  </tr>`).join('');
-}
-
-// ── MANUAL STAMP ──
-async function manualStamp(){
-  const phone  = document.getElementById('m-phone').value.trim().replace(/[^0-9]/g,'');
-  const branch = document.getElementById('m-branch').value;
-  if(!/^[0-9]{9,15}$/.test(phone)){ showToast('Enter a valid phone number','t-red'); return; }
-
-  const today = new Date().toISOString().split('T')[0];
-  const {data:cust} = await db.from('customers').select('phone').eq('phone',phone).maybeSingle();
-  if(!cust){ showToast('Customer not found — they must register first','t-red'); return; }
-
-  const {data:ex} = await db.from('stamps').select('id').eq('phone',phone).eq('stamp_date',today).limit(1);
-  if(ex&&ex.length>0){ showToast('Already stamped today for this number','t-red'); return; }
-
-  const {error} = await db.from('stamps').insert([{phone,branch,stamp_date:today}]);
-  if(error){ showToast('Error adding stamp','t-red'); return; }
-  showToast('✅ Stamp added for '+phone,'t-pink');
-  document.getElementById('m-phone').value='';
-  loadAll();
-}
-
-// ── TABS ──
-function switchTab(name){
-  document.querySelectorAll('.tab').forEach((t,i)=>{
-    t.classList.toggle('on',['customers','stamps','redemptions'][i]===name);
-  });
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
-  document.getElementById('tab-'+name).classList.add('on');
-}
-
-// ── EXPORT CSV ──
-function exportCSV(){
-  if(!allCustomers.length){ showToast('No data to export','t-red'); return; }
-  const rows=[['Name','Phone','Reg Branch','Total Visits','Meals Earned','Joined']];
-  allCustomers.forEach(c=>{
-    const myS=allStampsRaw.filter(s=>s.phone===c.phone);
-    rows.push([c.name,c.phone,c.registered_branch,myS.length,c.total_redeemed||0,new Date(c.created_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})]);
-  });
-  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='emboss_circle_members_'+new Date().toISOString().split('T')[0]+'.csv';
-  a.click();
-  showToast('CSV exported ✅');
-}
-
-// ── TOAST ──
-let tTmr;
-function showToast(msg,cls=''){
-  const t=document.getElementById('toast');
-  t.textContent=msg;
-  t.className='toast '+(cls||'');
-  t.classList.add('up');
-  clearTimeout(tTmr);
-  tTmr=setTimeout(()=>t.classList.remove('up'),3400);
-}
-</script>
-</body>
-</html>
