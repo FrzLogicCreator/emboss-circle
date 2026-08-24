@@ -353,17 +353,68 @@ async function loadKPIs(){
 // ── CUSTOMERS ──
 async function loadCustomers(){
   const br = document.getElementById('branch-filter').value;
-  let q = db.from('customers').select('*').order('created_at',{ascending:false}).limit(10000);
+  // Fetch ALL customers using pagination
+  let allCusts = [];
+  let fromC = 0;
+  while(true){
+    const {data:pageC,error:pageCErr} = await db.from('customers')
+      .select('*')
+      .order('created_at',{ascending:false})
+      .range(fromC, fromC + pageSize - 1);
+    if(pageCErr || !pageC || pageC.length === 0) break;
+    allCusts = allCusts.concat(pageC);
+    if(pageC.length < pageSize) break;
+    fromC += pageSize;
+  }
+  const data = allCusts;
   if(br!=='all') q=q.eq('registered_branch',br);
   const {data} = await q;
-  allCustomers = data||[];
+  allCustomers = allCusts||[];
 
-  const {data:stamps} = await db.from('stamps').select('phone,stamp_date').limit(10000);
-  const {data:reds}   = await db.from('redemptions').select('phone,redeemed_at').order('redeemed_at',{ascending:false}).limit(10000);
+  // Fetch ALL stamps using pagination (Supabase max 1000 per request)
+  let allStamps = [];
+  let from = 0;
+  const pageSize = 1000;
+  while(true){
+    const {data:page,error:pageErr} = await db.from('stamps')
+      .select('phone,stamp_date')
+      .range(from, from + pageSize - 1);
+    if(pageErr || !page || page.length === 0) break;
+    allStamps = allStamps.concat(page);
+    if(page.length < pageSize) break;
+    from += pageSize;
+  }
+  const stamps = allStamps;
+  // Fetch ALL redemptions using pagination
+  let allReds = [];
+  let fromR = 0;
+  while(true){
+    const {data:pageR,error:pageRErr} = await db.from('redemptions')
+      .select('phone,redeemed_at')
+      .order('redeemed_at',{ascending:false})
+      .range(fromR, fromR + pageSize - 1);
+    if(pageRErr || !pageR || pageR.length === 0) break;
+    allReds = allReds.concat(pageR);
+    if(pageR.length < pageSize) break;
+    fromR += pageSize;
+  }
+  const reds = allReds;
   allStampsRaw = stamps||[];
   allRedsRaw   = reds||[];
 
   renderCustomers(allCustomers);
+}
+
+// Convert UTC time to Saudi Arabia time (UTC+3) for display
+function toSaudiTime(utcStr){
+  if(!utcStr) return '—';
+  const d = new Date(utcStr);
+  // Add 3 hours for Saudi time
+  const saudi = new Date(d.getTime() + 3*60*60*1000);
+  return saudi.toLocaleString('en-GB',{
+    day:'2-digit',month:'2-digit',year:'numeric',
+    hour:'2-digit',minute:'2-digit'
+  });
 }
 
 function renderCustomers(list){
@@ -378,7 +429,7 @@ function renderCustomers(list){
     const lastRed  = myReds.length>0 ? myReds[0].redeemed_at.split('T')[0] : null;
     const cycle    = lastRed ? myStamps.filter(s=>s.stamp_date>lastRed) : myStamps;
     const cur      = Math.min(cycle.length, STAMPS_NEEDED);
-    const joined   = new Date(c.created_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const joined   = toSaudiTime(c.created_at);
     const brClass  = {olaya:'b-green',masif:'b-blue',muruj:'b-gold'}[c.registered_branch]||'b-green';
     const rewardReady = cur>=STAMPS_NEEDED;
     return `<tr>
@@ -440,7 +491,7 @@ async function loadRedemptions(){
     <td style="font-family:monospace">${r.phone}</td>
     <td>${r.customers?.name||'–'}</td>
     <td><span class="badge ${brClass[r.branch]||'b-green'}">${r.branch}</span></td>
-    <td>${new Date(r.redeemed_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+    <td>${toSaudiTime(r.redeemed_at)}</td>
   </tr>`).join('');
 }
 
@@ -479,7 +530,7 @@ function exportCSV(){
   const rows=[['Name','Phone','Reg Branch','Total Visits','Meals Earned','Joined']];
   allCustomers.forEach(c=>{
     const myS=allStampsRaw.filter(s=>s.phone===c.phone);
-    rows.push([c.name,c.phone,c.registered_branch,myS.length,c.total_redeemed||0,new Date(c.created_at).toLocaleString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})]);
+    rows.push([c.name,c.phone,c.registered_branch,myS.length,c.total_redeemed||0,toSaudiTime(c.created_at)]);
   });
   const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
   const a=document.createElement('a');
