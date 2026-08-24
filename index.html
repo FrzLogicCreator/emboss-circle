@@ -1144,11 +1144,10 @@ function resetApp(){
 
 /* ── HELPERS ── */
 function todayStr(){
-  // Use device local time (Saudi Arabia UTC+3) not UTC
+  // Get correct local date in Saudi Arabia
+  // toLocaleDateString with en-CA gives YYYY-MM-DD format in device local time
   const d = new Date();
-  const offset = d.getTimezoneOffset();
-  const local = new Date(d.getTime() - offset * 60000);
-  return local.toISOString().split('T')[0];
+  return d.toLocaleDateString('en-CA'); // Always gives YYYY-MM-DD in local time
 }
 
 let tTmr;
