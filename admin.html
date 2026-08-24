@@ -290,6 +290,7 @@ const SUPABASE_URL  = 'https://funkvzxbhpnjgjhvwlbd.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1bmt2enhiaHBuamdqaHZ3bGJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1NzY1MzEsImV4cCI6MjA5ODE1MjUzMX0.HGwLWyJaR3tUb7TWA0NPvH2TuPCNIbrb7LhR5c4s9Ys';
 const ADMIN_PASS    = 'Emboss@2026';   // ← CHANGE THIS PASSWORD
 const STAMPS_NEEDED = 6;
+const PAGE_SIZE = 1000; // Supabase max rows per request
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
@@ -360,11 +361,11 @@ async function loadCustomers(){
     const {data:pageC,error:pageCErr} = await db.from('customers')
       .select('*')
       .order('created_at',{ascending:false})
-      .range(fromC, fromC + pageSize - 1);
+      .range(fromC, fromC + PAGE_SIZE - 1);
     if(pageCErr || !pageC || pageC.length === 0) break;
     allCusts = allCusts.concat(pageC);
-    if(pageC.length < pageSize) break;
-    fromC += pageSize;
+    if(pageC.length < PAGE_SIZE) break;
+    fromC += PAGE_SIZE;
   }
   const data = allCusts;
   if(br!=='all') q=q.eq('registered_branch',br);
@@ -374,15 +375,15 @@ async function loadCustomers(){
   // Fetch ALL stamps using pagination (Supabase max 1000 per request)
   let allStamps = [];
   let from = 0;
-  const pageSize = 1000;
+  
   while(true){
     const {data:page,error:pageErr} = await db.from('stamps')
       .select('phone,stamp_date')
-      .range(from, from + pageSize - 1);
+      .range(from, from + PAGE_SIZE - 1);
     if(pageErr || !page || page.length === 0) break;
     allStamps = allStamps.concat(page);
-    if(page.length < pageSize) break;
-    from += pageSize;
+    if(page.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
   }
   const stamps = allStamps;
   // Fetch ALL redemptions using pagination
@@ -392,11 +393,11 @@ async function loadCustomers(){
     const {data:pageR,error:pageRErr} = await db.from('redemptions')
       .select('phone,redeemed_at')
       .order('redeemed_at',{ascending:false})
-      .range(fromR, fromR + pageSize - 1);
+      .range(fromR, fromR + PAGE_SIZE - 1);
     if(pageRErr || !pageR || pageR.length === 0) break;
     allReds = allReds.concat(pageR);
-    if(pageR.length < pageSize) break;
-    fromR += pageSize;
+    if(pageR.length < PAGE_SIZE) break;
+    fromR += PAGE_SIZE;
   }
   const reds = allReds;
   allStampsRaw = stamps||[];
