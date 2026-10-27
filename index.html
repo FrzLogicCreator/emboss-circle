@@ -692,7 +692,7 @@ html,body{
 
     <!-- Add stamp button with animated emoji inside -->
     <div id="stamp-btn-wrap" style="display:none">
-      <button class="btn btn-pink" id="btn-stamp" onclick="doStamp()" style="font-size:1.05rem;padding:18px;justify-content:center;gap:10px">
+      <button class="btn btn-pink" id="btn-stamp" onclick="goInvoice()" style="font-size:1.05rem;padding:18px;justify-content:center;gap:10px">
         <span class="tap-emoji">👆</span>
         <span class="btn-txt">⭐ Collect My Stamp</span>
         <div class="spin"></div>
@@ -707,6 +707,30 @@ html,body{
 
     <button class="btn-ghost" onclick="resetApp()">← Done / New Customer</button>
 
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     S3b · INVOICE
+══════════════════════════════════════ -->
+<div class="screen" id="s-invoice">
+  <div class="top-header">
+    <div class="header-top-label-en" style="margin-bottom:10px">Loyalty Rewards Program</div>
+    <div class="logo-oval">
+      <img src="" id="inv-logo" style="width:90px;height:90px;object-fit:contain;border-radius:50%">
+    </div>
+  </div>
+  <div style="padding:28px 20px 20px;text-align:center">
+    <div style="font-size:1.5rem;font-weight:700;margin-bottom:8px">🧾 Invoice Verification</div>
+    <div style="font-size:0.95rem;color:#666;margin-bottom:24px">Enter the last 4 digits of your invoice number</div>
+    <input id="inv-input" type="number" inputmode="numeric" maxlength="4"
+      style="width:100%;max-width:260px;font-size:2rem;text-align:center;letter-spacing:8px;padding:14px;border:2px solid #e0e0e0;border-radius:14px;outline:none;display:block;margin:0 auto 20px"
+      placeholder="_ _ _ _" oninput="this.value=this.value.slice(0,4)">
+    <button class="btn btn-pink" id="btn-inv-submit" onclick="doInvoiceSubmit()" style="font-size:1.05rem;padding:18px;justify-content:center;gap:10px;width:100%">
+      <span class="btn-txt">✅ Submit & Get Stamp</span>
+      <div class="spin"></div>
+    </button>
+    <button class="btn-ghost" onclick="go('s-stamps')" style="margin-top:12px">← Go Back</button>
   </div>
 </div>
 
@@ -1083,8 +1107,28 @@ function renderCard(anim=false){
 }
 
 /* ── ADD STAMP ── */
+function goInvoice(){
+  // copy logo to invoice screen
+  const mainLogo = document.querySelector('#s-stamps .logo-oval img');
+  const invLogo = document.getElementById('inv-logo');
+  if(mainLogo) invLogo.src = mainLogo.src;
+  document.getElementById('inv-input').value='';
+  go('s-invoice');
+}
+
+async function doInvoiceSubmit(){
+  const btn=document.getElementById('btn-inv-submit');
+  const val=document.getElementById('inv-input').value.trim();
+  if(val.length!==4||isNaN(val)){
+    showToast('Please enter exactly 4 digits','t-pink');
+    return;
+  }
+  A.invoiceLast4 = val;
+  await doStamp();
+}
+
 async function doStamp(){
-  const btn=document.getElementById('btn-stamp');
+  const btn=document.getElementById('btn-inv-submit');
   busy(btn,true);
   try{
     // 9-hour rule guard
@@ -1096,6 +1140,7 @@ async function doStamp(){
         A.today=true; renderCard(false);
         const nextTime = new Date(lastS.getTime() + 9*60*60*1000);
         const minsLeft = Math.ceil((nextTime - Date.now()) / 60000);
+        go('s-stamps');
         showToast('Next stamp available in ' + minsLeft + ' minutes ⏱','t-pink');
         return;
       }
@@ -1103,6 +1148,7 @@ async function doStamp(){
     await addStampDB();
     A.stamps++; A.visits++; A.today=true;
     renderCard(true);
+    go('s-stamps');
     const left=STAMPS_NEEDED-A.stamps;
     if(A.stamps>=STAMPS_NEEDED) showToast('🎉 Card complete! Claim your free meal!','t-pink');
     else showToast(`⭐ Stamp added! ${left} more to go!`);
@@ -1113,7 +1159,7 @@ async function doStamp(){
 
 async function addStampDB(){
   const now = new Date().toISOString();
-  const {error}=await tw(db.from('stamps').insert([{phone:A.phone,branch:BRANCH,stamp_date:todayStr(),created_at:now}]));
+  const {error}=await tw(db.from('stamps').insert([{phone:A.phone,branch:BRANCH,stamp_date:todayStr(),created_at:now,invoice_last4:A.invoiceLast4||null}]));
   if(error) throw error;
 }
 
