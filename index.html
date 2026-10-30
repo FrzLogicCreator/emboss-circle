@@ -722,10 +722,10 @@ html,body{
   </div>
   <div style="padding:28px 20px 20px;text-align:center">
     <div style="font-size:1.5rem;font-weight:700;margin-bottom:8px">🧾 Invoice Verification</div>
-    <div style="font-size:0.95rem;color:#666;margin-bottom:24px">Enter the last 4 digits of your invoice number</div>
-    <input id="inv-input" type="number" inputmode="numeric" maxlength="4"
+    <div style="font-size:0.95rem;color:#666;margin-bottom:24px">Enter the last digit of your invoice number</div>
+    <input id="inv-input" type="number" inputmode="numeric" maxlength="1"
       style="width:100%;max-width:260px;font-size:2rem;text-align:center;letter-spacing:8px;padding:14px;border:2px solid #e0e0e0;border-radius:14px;outline:none;display:block;margin:0 auto 20px"
-      placeholder="_ _ _ _" oninput="this.value=this.value.slice(0,4)">
+      placeholder="_" oninput="this.value=this.value.slice(0,1)">
     <button class="btn btn-pink" id="btn-inv-submit" onclick="doInvoiceSubmit()" style="font-size:1.05rem;padding:18px;justify-content:center;gap:10px;width:100%">
       <span class="btn-txt">✅ Submit & Get Stamp</span>
       <div class="spin"></div>
@@ -1119,8 +1119,8 @@ function goInvoice(){
 async function doInvoiceSubmit(){
   const btn=document.getElementById('btn-inv-submit');
   const val=document.getElementById('inv-input').value.trim();
-  if(val.length!==4||isNaN(val)){
-    showToast('Please enter exactly 4 digits','t-pink');
+  if(val.length!==1||isNaN(val)){
+    showToast('Please enter exactly 1 digit','t-pink');
     return;
   }
   A.invoiceLast4 = val;
@@ -1205,6 +1205,18 @@ function showToast(msg,cls=''){
   clearTimeout(tTmr);
   tTmr=setTimeout(()=>t.classList.remove('up'),3400);
 }
+
+// ── KEYBOARD INACTIVITY DISMISS (2 min) ──
+let _lastTouch = Date.now();
+document.addEventListener('touchstart', () => { _lastTouch = Date.now(); }, {passive: true});
+document.addEventListener('click',      () => { _lastTouch = Date.now(); }, {passive: true});
+setInterval(() => {
+  if (Date.now() - _lastTouch > 2 * 60 * 1000) {
+    const f = document.getElementById('phone-inp');
+    if (f) f.blur();
+    _lastTouch = Date.now();
+  }
+}, 30000);
 </script>
 </body>
 </html>
