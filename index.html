@@ -508,7 +508,7 @@ html,body{
 <!-- ══════════════════════════════════════
      S1 · PHONE ENTRY
 ══════════════════════════════════════ -->
-<div class="screen active" id="s-phone">
+<div class="screen" id="s-phone">
 
   <div class="top-header">
     <div class="header-top-label-en" style="margin-bottom:10px">Loyalty Rewards Program</div>
@@ -722,7 +722,7 @@ html,body{
 <!-- ══════════════════════════════════════
      S3-B · LIVE ORDERS
 ══════════════════════════════════════ -->
-<div class="screen" id="s-orders">
+<div class="screen active" id="s-orders">
   <div class="top-header">
     <div class="header-top-label-en" style="margin-bottom:10px">Loyalty Rewards Program</div>
     <div class="logo-oval">
@@ -752,7 +752,6 @@ html,body{
       <div id="orders-history-list" style="display:flex;flex-direction:column;gap:10px"></div>
     </div>
   </div>
-  <button class="btn-ghost" onclick="exitOrders()" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%)">← Go Back</button>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -931,10 +930,10 @@ let A = {phone:'',cust:null,stamps:0,visits:0,redeemed:0,today:false};
   };
   // Run immediately if DOM ready, else wait
   if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',()=>{ setB(); setTimeout(()=>{ const f=document.getElementById('phone-inp'); if(f) f.focus(); },100); });
+    document.addEventListener('DOMContentLoaded',()=>{ setB(); goOrders(); });
   } else {
     setB();
-    setTimeout(()=>{ const f=document.getElementById('phone-inp'); if(f) f.focus(); },100);
+    goOrders();
   }
 })();
 
@@ -1141,10 +1140,6 @@ let _realtimeSub = null;
 let _ordersData = { live: [], history: [] };
 
 function goOrders(){
-  // copy logo to orders screen
-  const mainLogo = document.querySelector('#s-stamps .logo-oval img');
-  const ordLogo = document.getElementById('orders-logo');
-  if(mainLogo && ordLogo) ordLogo.src = mainLogo.src;
   A.selectedOrder = null;
   go('s-orders');
   startPolling();
@@ -1154,7 +1149,7 @@ function goOrders(){
 function exitOrders(){
   stopPolling();
   stopRealtime();
-  go('s-stamps');
+  go('s-orders');
 }
 
 async function fetchOrders(){
@@ -1335,14 +1330,13 @@ async function doConfirm(){
 
 /* ── RESET ── */
 function resetApp(){
-  stopPolling(); stopRealtime();
   A={phone:'',cust:null,stamps:0,visits:0,redeemed:0,today:false,lastStampTime:null,selectedOrder:null};
   document.getElementById('phone-inp').value='';
   document.getElementById('phone-err').classList.remove('show');
   document.getElementById('phone-inp').classList.remove('has-error');
   const banner=document.getElementById('phone-order-banner');
   if(banner) banner.style.display='none';
-  go('s-phone');
+  goOrders();
   setTimeout(()=>document.getElementById('phone-inp').focus(),200);
 }
 
