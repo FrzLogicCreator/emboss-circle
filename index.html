@@ -1644,13 +1644,12 @@ async function doStamp(){
       const uidStr = String(uid);
       const uidNum = Number(uid);
       console.log('[DELETE] Attempting delete. branch='+BRANCH+' bill_uid='+uid+' type='+typeof uid);
-      const [r1,r2] = await Promise.allSettled([
-        tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid', uidStr).select()),
-        isNaN(uidNum) ? Promise.resolve({value:{data:[]}}) :
-          tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid', uidNum).select())
-      ]);
-      console.log('[DELETE] string result:', JSON.stringify(r1?.value));
-      console.log('[DELETE] number result:', JSON.stringify(r2?.value));
+      // First: check what actually exists for this bill_uid
+      const {data:existing} = await tw(db.from('pending_orders').select('id,branch,bill_uid').eq('bill_uid', uidNum||uidStr));
+      console.log('[DELETE] Existing rows for this bill_uid:', JSON.stringify(existing));
+      // Delete by bill_uid only (no branch filter) to bypass any branch case mismatch
+      const {data:del1,error:err1} = await tw(db.from('pending_orders').delete().eq('bill_uid', uidNum||uidStr).select());
+      console.log('[DELETE] Result (no branch filter):', JSON.stringify(del1), 'err:', JSON.stringify(err1));
     }
     A.stamps++; A.visits++; A.today=true;
     renderCard(true);
