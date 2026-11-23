@@ -1489,10 +1489,11 @@ async function fetchOrders(){
       headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},
       body: JSON.stringify({branch: BRANCH})
     });
-    if(!res.ok) return;
+    if(!res.ok){ console.log('[FETCH] edge fn error:', res.status); return; }
     const data = await res.json();
+    console.log('[FETCH] orders returned:', (data.orders||[]).map(o=>o.bill_uid));
     renderOrders(data.orders || []);
-  } catch(e){ /* silent fail — keep showing last state */ }
+  } catch(e){ console.log('[FETCH] exception:', e.message); }
 }
 
 // Track bill_uids currently displayed to detect NEW arrivals for animation
