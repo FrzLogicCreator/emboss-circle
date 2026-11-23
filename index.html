@@ -1643,12 +1643,14 @@ async function doStamp(){
       const uid = A.selectedOrder.bill_uid;
       const uidStr = String(uid);
       const uidNum = Number(uid);
-      // Fire both — one will match, one will silently find 0 rows — no harm
-      await Promise.allSettled([
-        tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid', uidStr)),
-        isNaN(uidNum) ? Promise.resolve() :
-          tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid', uidNum))
+      console.log('[DELETE] Attempting delete. branch='+BRANCH+' bill_uid='+uid+' type='+typeof uid);
+      const [r1,r2] = await Promise.allSettled([
+        tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid', uidStr).select()),
+        isNaN(uidNum) ? Promise.resolve({value:{data:[]}}) :
+          tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid', uidNum).select())
       ]);
+      console.log('[DELETE] string result:', JSON.stringify(r1?.value));
+      console.log('[DELETE] number result:', JSON.stringify(r2?.value));
     }
     A.stamps++; A.visits++; A.today=true;
     renderCard(true);
