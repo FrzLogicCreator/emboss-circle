@@ -790,6 +790,9 @@ html,body{
     <div class="branch-pill" id="branch-pill-1"></div>
   </div>
 
+  <!-- Back to orders -->
+  <button class="back" onclick="goOrders()" style="position:absolute;top:14px;left:14px;background:none;border:none;color:var(--green);font-size:0.9rem;font-weight:700;cursor:pointer;padding:6px 10px;border-radius:10px;display:flex;align-items:center;gap:4px">← Orders</button>
+
   <div class="content">
 
     <!-- Order banner: shown when customer taps claim from s-orders -->
@@ -1029,6 +1032,19 @@ html,body{
       </div>
     </div>
 
+  </div>
+
+  <!-- Bottom bar: check stamps + made in Saudi -->
+  <div style="position:fixed;bottom:14px;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;pointer-events:none">
+    <button onclick="goCheckStamps()" style="pointer-events:all;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);color:#fff;border-radius:22px;padding:9px 18px;font-size:0.8rem;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);display:flex;align-items:center;gap:7px">
+      <span>🏅</span>
+      <span>كم ختمي؟</span>
+      <span style="opacity:.7;font-size:0.72rem">My Stamps</span>
+    </button>
+    <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:5px 12px;pointer-events:none">
+      <span style="font-size:.85rem">🇸🇦</span>
+      <span style="font-size:0.62rem;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:.04em">صُنع في السعودية · Made in Saudi</span>
+    </div>
   </div>
 
   <!-- Mascot character -->
@@ -1420,6 +1436,14 @@ function renderCard(anim=false){
 let _pollTimer = null;
 let _realtimeSub = null;
 let _ordersData = { live: [], history: [] };
+
+function goCheckStamps(){
+  // Go to phone screen to check stamps only — no order claiming
+  A.selectedOrder = null;
+  const banner = document.getElementById('phone-order-banner');
+  if(banner) banner.style.display = 'none';
+  go('s-phone');
+}
 
 function goOrders(){
   A.selectedOrder = null;
