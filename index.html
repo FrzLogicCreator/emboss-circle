@@ -1034,8 +1034,8 @@ html,body{
 
   </div>
 
-  <!-- Bottom bar: check stamps + made in Saudi -->
-  <div style="position:fixed;bottom:14px;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;pointer-events:none">
+  <!-- Bottom: check stamps button + made in Saudi (both centered) -->
+  <div style="position:fixed;bottom:10px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none">
     <button onclick="goCheckStamps()" style="pointer-events:all;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);color:#fff;border-radius:22px;padding:9px 18px;font-size:0.8rem;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);display:flex;align-items:center;gap:7px">
       <span>🏅</span>
       <span>كم ختمي؟</span>
@@ -1284,10 +1284,15 @@ async function doPhone(){
     const {data,error}=await tw(db.from('customers').select('*').eq('phone',ph).maybeSingle());
     if(error) throw error;
     if(!data){
-      document.getElementById('reg-phone-show').textContent=ph;
-      document.getElementById('name-inp').value='';
-      document.getElementById('name-err').classList.remove('show');
-      go('s-register');
+      if(A.checkOnly){
+        // Check-only mode: don't offer registration — just inform
+        showToast('📋 Number not registered. Visit any branch to sign up.','t-red');
+      } else {
+        document.getElementById('reg-phone-show').textContent=ph;
+        document.getElementById('name-inp').value='';
+        document.getElementById('name-err').classList.remove('show');
+        go('s-register');
+      }
     } else {
       A.cust=data; await loadCard();
     }
@@ -1425,7 +1430,8 @@ function renderCard(anim=false){
         ? 'Next stamp available in ' + minsLeft + ' minutes ⏱'
         : 'Next stamp available soon!';
     }
-  } else {
+  } else if(!A.checkOnly) {
+    // Only show stamp button when coming from a live order claim, not check-only mode
     document.getElementById('stamp-btn-wrap').style.display='block';
   }
 }
@@ -1438,8 +1444,9 @@ let _realtimeSub = null;
 let _ordersData = { live: [], history: [] };
 
 function goCheckStamps(){
-  // Go to phone screen to check stamps only — no order claiming
+  // Go to phone screen to check stamps only — no order claiming, no registration
   A.selectedOrder = null;
+  A.checkOnly = true;
   const banner = document.getElementById('phone-order-banner');
   if(banner) banner.style.display = 'none';
   go('s-phone');
@@ -1447,6 +1454,7 @@ function goCheckStamps(){
 
 function goOrders(){
   A.selectedOrder = null;
+  A.checkOnly = false;
   // Wire branch pill
   const pillEl = document.getElementById('orders-branch-pill');
   if(pillEl) pillEl.textContent = BRANCHES[BRANCH] || BRANCH;
@@ -1668,7 +1676,7 @@ async function doConfirm(){
 
 /* ── RESET ── */
 function resetApp(){
-  A={phone:'',cust:null,stamps:0,visits:0,redeemed:0,today:false,lastStampTime:null,selectedOrder:null};
+  A={phone:'',cust:null,stamps:0,visits:0,redeemed:0,today:false,lastStampTime:null,selectedOrder:null,checkOnly:false};
   document.getElementById('phone-inp').value='';
   document.getElementById('phone-err').classList.remove('show');
   document.getElementById('phone-inp').classList.remove('has-error');
