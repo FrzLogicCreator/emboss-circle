@@ -1638,8 +1638,17 @@ async function doStamp(){
     }
     await addStampDB();
     // Delete claimed order from pending_orders
+    // Cast to both string and number to handle Odoo/Supabase type mismatch
     if(A.selectedOrder){
-      await tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid',A.selectedOrder.bill_uid));
+      const uid = A.selectedOrder.bill_uid;
+      const uidStr = String(uid);
+      const uidNum = Number(uid);
+      // Fire both — one will match, one will silently find 0 rows — no harm
+      await Promise.allSettled([
+        tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid', uidStr)),
+        isNaN(uidNum) ? Promise.resolve() :
+          tw(db.from('pending_orders').delete().eq('branch',BRANCH).eq('bill_uid', uidNum))
+      ]);
     }
     A.stamps++; A.visits++; A.today=true;
     renderCard(true);
